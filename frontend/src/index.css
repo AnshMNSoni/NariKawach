@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NariKawach Design System - Calm, Trust-Focused Safety Design */
+
+@layer base {
+  :root {
+    /* Soft, calming color palette */
+    --background: 40 33% 98%;
+    --foreground: 200 25% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 25% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 25% 20%;
+
+    /* Sage green - calming, safety-focused primary */
+    --primary: 160 35% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Warm neutral secondary */
+    --secondary: 40 20% 94%;
+    --secondary-foreground: 200 25% 25%;
+
+    --muted: 40 15% 92%;
+    --muted-foreground: 200 15% 45%;
+
+    /* Soft teal accent */
+    --accent: 175 30% 90%;
+    --accent-foreground: 175 40% 30%;
+
+    /* Soft amber for warnings - not aggressive */
+    --destructive: 25 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 160 35% 45%;
+
+    --radius: 0.75rem;
+
+    /* Custom safety status colors */
+    --safe: 160 45% 45%;
+    --safe-foreground: 0 0% 100%;
+    --safe-bg: 160 40% 95%;
+    
+    --monitoring: 45 85% 55%;
+    --monitoring-foreground: 45 90% 20%;
+    --monitoring-bg: 45 70% 94%;
+    
+    --emergency: 15 75% 55%;
+    --emergency-foreground: 0 0% 100%;
+    --emergency-bg: 15 60% 95%;
+
+    /* Risk level colors */
+    --risk-low: 160 45% 45%;
+    --risk-medium: 45 85% 55%;
+    --risk-high: 15 75% 55%;
+
+    /* Sidebar tokens */
+    --sidebar-background: 40 25% 97%;
+    --sidebar-foreground: 200 25% 25%;
+    --sidebar-primary: 160 35% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 175 30% 92%;
+    --sidebar-accent-foreground: 175 40% 30%;
+    --sidebar-border: 40 20% 90%;
+    --sidebar-ring: 160 35% 45%;
+  }
+
+  .dark {
+    --background: 200 25% 10%;
+    --foreground: 40 20% 95%;
+
+    --card: 200 20% 14%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 200 20% 14%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 160 40% 50%;
+    --primary-foreground: 200 25% 10%;
+
+    --secondary: 200 15% 20%;
+    --secondary-foreground: 40 20% 95%;
+
+    --muted: 200 15% 18%;
+    --muted-foreground: 40 15% 60%;
+
+    --accent: 175 25% 20%;
+    --accent-foreground: 175 40% 80%;
+
+    --destructive: 25 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 15% 22%;
+    --input: 200 15% 22%;
+    --ring: 160 40% 50%;
+
+    --safe: 160 50% 50%;
+    --safe-foreground: 200 25% 10%;
+    --safe-bg: 160 30% 15%;
+    
+    --monitoring: 45 70% 50%;
+    --monitoring-foreground: 200 25% 10%;
+    --monitoring-bg: 45 40% 15%;
+    
+    --emergency: 15 65% 50%;
+    --emergency-foreground: 0 0% 100%;
+    --emergency-bg: 15 40% 15%;
+
+    --risk-low: 160 50% 50%;
+    --risk-medium: 45 70% 50%;
+    --risk-high: 15 65% 50%;
+
+    --sidebar-background: 200 20% 12%;
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-primary: 160 40% 50%;
+    --sidebar-primary-foreground: 200 25% 10%;
+    --sidebar-accent: 175 25% 18%;
+    --sidebar-accent-foreground: 175 40% 80%;
+    --sidebar-border: 200 15% 20%;
+    --sidebar-ring: 160 40% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer utilities {
+  .gradient-calm {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--accent) / 0.15) 100%);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--accent) / 0.3) 100%);
+  }
+
+  .gradient-safe {
+    background: linear-gradient(135deg, hsl(var(--safe-bg)) 0%, hsl(var(--safe) / 0.15) 100%);
+  }
+
+  .gradient-monitoring {
+    background: linear-gradient(135deg, hsl(var(--monitoring-bg)) 0%, hsl(var(--monitoring) / 0.15) 100%);
+  }
+
+  .gradient-emergency {
+    background: linear-gradient(135deg, hsl(var(--emergency-bg)) 0%, hsl(var(--emergency) / 0.15) 100%);
+  }
+
+  .shadow-calm {
+    box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.15), 0 2px 8px -2px hsl(var(--primary) / 0.1);
+  }
+
+  .shadow-soft {
+    box-shadow: 0 2px 12px -2px hsl(var(--foreground) / 0.08), 0 1px 4px -1px hsl(var(--foreground) / 0.06);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out forwards;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
