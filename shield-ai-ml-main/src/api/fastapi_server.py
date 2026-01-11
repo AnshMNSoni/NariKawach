@@ -26,8 +26,8 @@ from ..anomaly_detection.pattern_analyzer import PatternAnalyzer
 
 from .middleware import SecurityMiddleware, RateLimitMiddleware
 from .schemas import *
-from ..utils.logger import setup_logger
-from ..config.settings import settings
+from ...utils.logger import setup_logger
+from ...config.settings import settings
 
 
 # Setup logger
