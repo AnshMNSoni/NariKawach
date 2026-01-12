@@ -19,6 +19,7 @@ interface LocationMapProps {
   isTracking: boolean;
   onLocationUpdate?: (lat: number, lng: number) => void;
   userId?: string;
+  showMapAlways?: boolean;
 }
 
 interface LocationState {
@@ -43,7 +44,7 @@ const LocationMap = ({ isTracking, onLocationUpdate, userId }: LocationMapProps)
      Initialize Map (only once)
   -------------------------------- */
   useEffect(() => {
-    if (!isTracking || !mapContainerRef.current || mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
       center: [20.5937, 78.9629],
@@ -194,19 +195,6 @@ const LocationMap = ({ isTracking, onLocationUpdate, userId }: LocationMapProps)
   /* -------------------------------
      UI States
   -------------------------------- */
-
-  if (!isTracking) {
-    return (
-      <div className="aspect-video bg-muted/40 rounded-2xl border flex items-center justify-center">
-        <div className="text-center">
-          <MapPin className="w-8 h-8 text-primary mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">
-            Start a trip to enable live tracking
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (permissionDenied) {
     return (

@@ -28,7 +28,7 @@ const Home = () => {
   const [panicDialogOpen, setPanicDialogOpen] = useState(false);
   const [triggeringPanic, setTriggeringPanic] = useState(false);
 
-  // ✅ Location state
+  //  Location state
   const [currentLat, setCurrentLat] = useState<number | null>(null);
   const [currentLng, setCurrentLng] = useState<number | null>(null);
 
@@ -68,7 +68,7 @@ const Home = () => {
     }
   }, [riskLevel, navigate]);
 
-  // ✅ Get GPS location
+  //  Get GPS location
   useEffect(() => {
     if (!navigator.geolocation) {
       console.error("Geolocation not supported");
@@ -112,7 +112,7 @@ const Home = () => {
     setLoading(false);
   };
 
-  // ✅ Start Trip with GPS
+  //  Start Trip with GPS
   const startTrip = async () => {
     const user = JSON.parse(localStorage.getItem("nk_user") || "{}");
 
@@ -148,12 +148,12 @@ const Home = () => {
 
       console.log("Trip started:", data);
 
-      // ✅ Save trip info
+      //  Save trip info
       setCurrentTripId(data.id);
       setIsTripActive(true);
       setSafetyStatus("monitoring");
 
-      // ✅ Redirect to onboarding page
+      //  Redirect to onboarding page
       navigate("/onboarding");
 
     } catch (error) {
@@ -432,7 +432,11 @@ const Home = () => {
           {/* Map Section */}
           <section className="mb-6">
             <div className="rounded-3xl overflow-hidden shadow-soft border border-border/50">
-              <LocationMap isTracking={isTripActive} userId={user?.id} />
+              <LocationMap
+                isTracking={isTripActive}
+                userId={user?.id}
+                showMapAlways={true}
+              />
             </div>
           </section>
 

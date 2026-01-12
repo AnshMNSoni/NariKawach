@@ -120,7 +120,7 @@ const Index = () => {
             Privacy-First Design
           </h2>
           <p className="text-muted-foreground mb-6">
-            Your location and data are only accessed with your explicit consent. 
+            Your location and data are only accessed with your explicit consent.
             We believe safety should never come at the cost of privacy.
           </p>
           <Link to="/auth">
@@ -140,7 +140,7 @@ const Index = () => {
             <span className="font-medium text-foreground">NariKawach</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2024 NariKawach. Your safety, your control.
+            © {new Date().getFullYear()} <span className="font-bold text-green-600">NariKawach</span>. Your safety, your control.
           </p>
         </div>
       </footer>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, MapPin, Phone, CheckCircle, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LocationMap from "@/components/LocationMap";
 
 const API_BASE = "http://localhost:5000";
 
@@ -99,24 +100,11 @@ const Emergency = () => {
                 Live Location Sharing
               </h2>
             </div>
-            <div className="aspect-[16/9] bg-gradient-to-br from-emergency/5 to-accent relative">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-full bg-emergency/10 flex items-center justify-center mx-auto mb-3 animate-pulse-soft">
-                    <MapPin className="w-8 h-8 text-emergency" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Location is being shared with your guardians
-                  </p>
-                </div>
-              </div>
-              {/* Simulated map grid */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="w-full h-full" style={{
-                  backgroundImage: "linear-gradient(hsl(var(--emergency) / 0.2) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--emergency) / 0.2) 1px, transparent 1px)",
-                  backgroundSize: "40px 40px"
-                }} />
-              </div>
+            <div className="aspect-[16/9]">
+              <LocationMap
+                isTracking={true} 
+                userId={JSON.parse(localStorage.getItem("nk_user") || "{}")?.id}
+              />
             </div>
           </div>
 
