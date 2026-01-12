@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, MapPin, Phone, CheckCircle, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+
+const API_BASE = "http://localhost:5000";
 
 interface Guardian {
   id: string;
@@ -16,33 +17,19 @@ const Emergency = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        fetchGuardians(session.user.id);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        fetchGuardians(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const user = JSON.parse(localStorage.getItem("nk_user") || "null");
+    if (!user) {
+      navigate("/auth");
+    } else {
+      fetchGuardians(user.id);
+    }
   }, [navigate]);
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("guardians")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (data) {
+      const res = await fetch(`${API_BASE}/guardian/${userId}`);
+      const data = await res.json();
+      if (res.ok) {
         setGuardians(data);
       }
     } catch (error) {
@@ -52,15 +39,7 @@ const Emergency = () => {
     }
   };
 
-  const handleReturnHome = async () => {
-    const session = await supabase.auth.getSession();
-    if (session.data.session?.user) {
-      // Reset risk level when leaving emergency
-      await supabase
-        .from("risk_status")
-        .update({ risk_level: "low", reason: "Emergency resolved" })
-        .eq("user_id", session.data.session.user.id);
-    }
+  const handleReturnHome = () => {
     navigate("/home");
   };
 

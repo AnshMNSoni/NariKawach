@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, User, Phone, Plus, Trash2, LogOut, Lock, MapPin, Bell, ChevronRight, Zap } from "lucide-react";
+import { Shield, User, Phone, Plus, LogOut, Lock, MapPin, Bell, ChevronRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
+import { getUser } from "@/utils/auth";
 
 type Guardian = {
   id: string;
@@ -32,32 +32,25 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [safetyMonitoring, setSafetyMonitoring] = useState(true);
   const [emergencyEscalation, setEmergencyEscalation] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [guardianToDelete, setGuardianToDelete] = useState<string | null>(null);
+
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate("/auth");
-        return;
-      }
-      fetchGuardians(session.user.id);
-    };
-    checkAuth();
+    const user = getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    fetchGuardians(user.id);
   }, [navigate]);
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const { data } = await supabase
-        .from("guardians")
-        .select("id, name, phone")
-        .eq("user_id", userId);
-
-      if (data) {
+      const res = await fetch(`http://localhost:5000/guardian/${userId}`);
+      const data = await res.json();
+      if (res.ok) {
         setGuardians(data);
       }
     } catch (error) {
@@ -78,20 +71,22 @@ const Settings = () => {
       return;
     }
 
-    const session = await supabase.auth.getSession();
-    if (!session.data.session?.user) return;
+    const user = getUser();
+    if (!user) return;
 
     setSaving(true);
     try {
-      const { data, error } = await supabase.from("guardians").insert({
-        user_id: session.data.session.user.id,
-        name: name.trim(),
-        phone: phone.trim(),
-      }).select().single();
-
-      if (error) throw error;
-
-      if (data) {
+      const res = await fetch(`http://localhost:5000/guardian/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id,
+          name: name.trim(),
+          phone: phone.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
         setGuardians([...guardians, data]);
         setName("");
         setPhone("");
@@ -105,28 +100,10 @@ const Settings = () => {
     }
   };
 
-  const confirmDeleteGuardian = (id: string) => {
-    setGuardianToDelete(id);
-    setDeleteDialogOpen(true);
-  };
 
-  const handleDeleteGuardian = async () => {
-    if (!guardianToDelete) return;
 
-    try {
-      await supabase.from("guardians").delete().eq("id", guardianToDelete);
-      setGuardians(guardians.filter((g) => g.id !== guardianToDelete));
-      toast({ title: "Guardian Removed" });
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to remove guardian.", variant: "destructive" });
-    } finally {
-      setDeleteDialogOpen(false);
-      setGuardianToDelete(null);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem("nk_user");
     navigate("/auth");
   };
 
@@ -178,14 +155,7 @@ const Settings = () => {
                       <p className="text-sm text-muted-foreground">{guardian.phone}</p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => confirmDeleteGuardian(guardian.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+
                 </div>
               ))}
 
@@ -338,15 +308,7 @@ const Settings = () => {
 
       <BottomNav />
 
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title="Remove Guardian"
-        description="Are you sure you want to remove this guardian? They will no longer be notified in emergencies."
-        confirmText="Remove"
-        onConfirm={handleDeleteGuardian}
-        variant="destructive"
-      />
+
 
       <ConfirmDialog
         open={logoutDialogOpen}

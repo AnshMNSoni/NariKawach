@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, HelpCircle, CheckCircle, Eye, AlertTriangle, MapPin, Lock, Camera, Mic, Users, ChevronDown, ChevronUp } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getUser } from "@/utils/auth";
 import BottomNav from "@/components/BottomNav";
 
 type ExpandedSections = {
@@ -21,13 +21,10 @@ const Help = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate("/auth");
-      }
-    };
-    checkAuth();
+    const user = getUser();
+    if (!user) {
+      navigate("/auth");
+    }
   }, [navigate]);
 
   const toggleSection = (section: keyof ExpandedSections) => {

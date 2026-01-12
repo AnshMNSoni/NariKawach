@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, Clock, CheckCircle, AlertTriangle, Eye, Calendar, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { format } from "date-fns";
+import { getUser } from "@/utils/auth";
 
 type Trip = {
   id: string;
@@ -20,26 +20,19 @@ const History = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate("/auth");
-        return;
-      }
-      fetchTrips(session.user.id);
-    };
-    checkAuth();
+    const user = getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    fetchTrips(user.id);
   }, [navigate]);
 
   const fetchTrips = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("trips")
-        .select("*")
-        .eq("user_id", userId)
-        .order("started_at", { ascending: false });
-
-      if (data) {
+      const res = await fetch(`http://localhost:5000/trip/history/${userId}`);
+      const data = await res.json();
+      if (res.ok) {
         setTrips(data as Trip[]);
       }
     } catch (error) {

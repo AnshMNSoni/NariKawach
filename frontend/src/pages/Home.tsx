@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Shield, Play, Square, AlertTriangle, CheckCircle, Eye, ShieldAlert, MapPin, Users, Clock, Phone, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import LocationMap from "@/components/LocationMap";
@@ -12,10 +11,13 @@ import Logo from "@/components/Logo";
 import FeatureCard from "@/components/FeatureCard";
 import heroBanner from "@/assets/hero-banner.png";
 
+const API_BASE = "http://localhost:5000";
+
 type RiskLevel = "low" | "medium" | "high";
 type SafetyStatus = "safe" | "monitoring" | "emergency";
 
 const Home = () => {
+  const [user, setUser] = useState<any>(null);
   const [isTripActive, setIsTripActive] = useState(false);
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [riskLevel, setRiskLevel] = useState<RiskLevel>("low");
@@ -25,6 +27,11 @@ const Home = () => {
   const [endTripDialogOpen, setEndTripDialogOpen] = useState(false);
   const [panicDialogOpen, setPanicDialogOpen] = useState(false);
   const [triggeringPanic, setTriggeringPanic] = useState(false);
+
+  // ✅ Location state
+  const [currentLat, setCurrentLat] = useState<number | null>(null);
+  const [currentLng, setCurrentLng] = useState<number | null>(null);
+
   const [searchParams] = useSearchParams();
   const isDemoMode = searchParams.get("demo") === "true";
   const navigate = useNavigate();
@@ -42,128 +49,147 @@ const Home = () => {
     }
   };
 
+  // Load user
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        fetchRiskStatus(session.user.id);
-        checkActiveTrip(session.user.id);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        fetchRiskStatus(session.user.id);
-        checkActiveTrip(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const user = JSON.parse(localStorage.getItem("nk_user") || "null");
+    if (!user) {
+      navigate("/auth");
+    } else {
+      setUser(user);
+      fetchRiskStatus(user.id);
+      checkActiveTrip(user.id);
+    }
   }, [navigate]);
 
+  // Redirect on emergency
   useEffect(() => {
     if (riskLevel === "high") {
       navigate("/emergency");
     }
   }, [riskLevel, navigate]);
 
-  const checkActiveTrip = async (userId: string) => {
-    const { data } = await supabase
-      .from("trips")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
+  // ✅ Get GPS location
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.error("Geolocation not supported");
+      return;
+    }
 
-    if (data) {
-      setIsTripActive(true);
-      setCurrentTripId(data.id);
-      setSafetyStatus("monitoring");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCurrentLat(position.coords.latitude);
+        setCurrentLng(position.coords.longitude);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+      },
+      { enableHighAccuracy: true }
+    );
+  }, []);
+
+  const checkActiveTrip = async (userId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/trip/history/${userId}`);
+      const data = await res.json();
+      const activeTrip = data.find((trip: any) => trip.status === "active");
+      if (activeTrip) {
+        setIsTripActive(true);
+        setCurrentTripId(activeTrip.id);
+        setSafetyStatus("monitoring");
+      } else {
+        setIsTripActive(false);
+      }
+    } catch (error) {
+      console.error("Error checking active trip");
+      setIsTripActive(false);
     }
   };
 
   const fetchRiskStatus = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("risk_status")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (data) {
-        setRiskLevel(data.risk_level as RiskLevel);
-        setRiskReason(data.reason || "");
-        
-        if (data.risk_level === "high") {
-          setSafetyStatus("emergency");
-        } else if (data.risk_level === "medium") {
-          setSafetyStatus("monitoring");
-        } else {
-          setSafetyStatus("safe");
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching risk status");
-    } finally {
-      setLoading(false);
-    }
+    setRiskLevel("low");
+    setRiskReason("");
+    setSafetyStatus("safe");
+    setLoading(false);
   };
 
+  // ✅ Start Trip with GPS
   const startTrip = async () => {
-    const session = await supabase.auth.getSession();
-    if (!session.data.session?.user) return;
+    const user = JSON.parse(localStorage.getItem("nk_user") || "{}");
 
-    const { data, error } = await supabase
-      .from("trips")
-      .insert({
-        user_id: session.data.session.user.id,
-        status: "active",
-      })
-      .select()
-      .single();
+    if (!currentLat || !currentLng) {
+      toast({
+        title: "Location not ready",
+        description: "Waiting for GPS location. Please try again in a moment.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (data) {
+    try {
+      const res = await fetch(`${API_BASE}/trip/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          start_location: {
+            lat: currentLat,
+            lng: currentLng
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to start trip");
+      }
+
+      console.log("Trip started:", data);
+
+      // ✅ Save trip info
       setCurrentTripId(data.id);
       setIsTripActive(true);
       setSafetyStatus("monitoring");
+
+      // ✅ Redirect to onboarding page
+      navigate("/onboarding");
+
+    } catch (error) {
+      console.error("Error starting trip:", error);
       toast({
-        title: "Trip Started",
-        description: "Safety monitoring is now active.",
+        title: "Trip Error",
+        description: "Could not start trip. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
   const endTrip = async () => {
-    const session = await supabase.auth.getSession();
-    if (!session.data.session?.user || !currentTripId) return;
+    const user = JSON.parse(localStorage.getItem("nk_user") || "null");
+    if (!user || !currentTripId) return;
 
-    await supabase
-      .from("trips")
-      .update({
-        status: "completed",
-        ended_at: new Date().toISOString(),
-        end_risk_level: riskLevel,
-      })
-      .eq("id", currentTripId);
+    try {
+      await fetch(`${API_BASE}/trip/end`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trip_id: currentTripId }),
+      });
 
-    await supabase
-      .from("risk_status")
-      .update({ risk_level: "low", reason: "Trip ended safely" })
-      .eq("user_id", session.data.session.user.id);
+      setIsTripActive(false);
+      setCurrentTripId(null);
+      setSafetyStatus("safe");
+      setRiskLevel("low");
+      setEndTripDialogOpen(false);
 
-    setIsTripActive(false);
-    setCurrentTripId(null);
-    setSafetyStatus("safe");
-    setRiskLevel("low");
-    setEndTripDialogOpen(false);
-
-    toast({
-      title: "Trip Ended",
-      description: "Safety monitoring has been stopped.",
-    });
+      toast({
+        title: "Trip Ended",
+        description: "Safety monitoring has been stopped.",
+      });
+    } catch (error) {
+      console.error("Error ending trip");
+    }
   };
 
   const handleTripToggle = () => {
@@ -177,46 +203,17 @@ const Home = () => {
   const triggerPanic = async () => {
     setTriggeringPanic(true);
     try {
-      const session = await supabase.auth.getSession();
-      if (!session.data.session?.user) return;
-
-      const userId = session.data.session.user.id;
-
-      const { data: existingStatus } = await supabase
-        .from("risk_status")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (existingStatus) {
-        await supabase
-          .from("risk_status")
-          .update({ 
-            risk_level: "high", 
-            reason: "Panic button activated" 
-          })
-          .eq("user_id", userId);
-      } else {
-        await supabase
-          .from("risk_status")
-          .insert({ 
-            user_id: userId,
-            risk_level: "high", 
-            reason: "Panic button activated" 
-          });
-      }
+      const user = JSON.parse(localStorage.getItem("nk_user") || "null");
+      if (!user) return;
 
       if (!isTripActive) {
-        const { data } = await supabase
-          .from("trips")
-          .insert({
-            user_id: userId,
-            status: "active",
-          })
-          .select()
-          .single();
-
-        if (data) {
+        const res = await fetch(`${API_BASE}/trip/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        });
+        const data = await res.json();
+        if (res.ok) {
           setCurrentTripId(data.id);
           setIsTripActive(true);
         }
@@ -236,6 +233,8 @@ const Home = () => {
       setTriggeringPanic(false);
     }
   };
+
+  // --- UI helpers remain unchanged below ---
 
   const getStatusConfig = () => {
     switch (safetyStatus) {
@@ -287,14 +286,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Logo size="lg" />
-          <div className="flex items-center gap-2 mt-4">
-            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
-          </div>
-        </div>
+        <Logo size="lg" />
       </div>
     );
   }
@@ -321,7 +313,7 @@ const Home = () => {
         <section className="relative overflow-hidden">
           {/* Hero Image with Diagonal Overlay */}
           <div className="relative h-64 md:h-80 w-full">
-            <img 
+            <img
               src={heroBanner}
               alt="NariKawach Protection"
               className="w-full h-full object-cover"
@@ -331,7 +323,7 @@ const Home = () => {
             <div className="absolute inset-0" style={{
               background: 'linear-gradient(135deg, transparent 40%, hsl(var(--background) / 0.95) 100%)'
             }} />
-            
+
             {/* Hero Content */}
             <div className="absolute inset-0 flex items-center">
               <div className="container mx-auto px-4">
@@ -358,7 +350,7 @@ const Home = () => {
       {/* Main Content */}
       <main className={`flex-1 relative z-10 ${!isTripActive ? '-mt-6' : 'pt-4'} pb-28`}>
         <div className="container mx-auto px-4">
-          
+
           {/* Quick Action Cards - When not tracking */}
           {!isTripActive && (
             <section className="mb-6">
@@ -440,7 +432,7 @@ const Home = () => {
           {/* Map Section */}
           <section className="mb-6">
             <div className="rounded-3xl overflow-hidden shadow-soft border border-border/50">
-              <LocationMap isTracking={isTripActive} />
+              <LocationMap isTracking={isTripActive} userId={user?.id} />
             </div>
           </section>
 
@@ -449,11 +441,10 @@ const Home = () => {
             <Button
               onClick={handleTripToggle}
               size="lg"
-              className={`w-full h-16 text-base font-semibold rounded-2xl shadow-calm transition-all duration-300 ${
-                isTripActive
-                  ? "bg-gradient-to-r from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70"
-                  : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-              }`}
+              className={`w-full h-16 text-base font-semibold rounded-2xl shadow-calm transition-all duration-300 ${isTripActive
+                ? "bg-gradient-to-r from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70"
+                : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                }`}
             >
               {isTripActive ? (
                 <>
@@ -467,7 +458,7 @@ const Home = () => {
                 </>
               )}
             </Button>
-            
+
             <p className="text-xs text-center text-muted-foreground px-4">
               {isTripActive
                 ? "Tap to end your trip and mark yourself as safe"
