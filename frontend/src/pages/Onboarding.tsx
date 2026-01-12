@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+
+const API_BASE = "http://localhost:5000";
 
 const guardianSchema = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }).max(100, { message: "Name is too long" }),
@@ -23,23 +24,12 @@ const Onboarding = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        setUserId(session.user.id);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        setUserId(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const user = JSON.parse(localStorage.getItem("nk_user") || "null");
+    if (!user) {
+      navigate("/auth");
+    } else {
+      setUserId(user.id);
+    }
   }, [navigate]);
 
   const handleSaveGuardian = async () => {
@@ -57,13 +47,17 @@ const Onboarding = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("guardians").insert({
-        user_id: userId,
-        name: name.trim(),
-        phone: phone.trim(),
+      const res = await fetch(`${API_BASE}/guardian/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          name: name.trim(),
+          phone: phone.trim(),
+        }),
       });
 
-      if (error) {
+      if (!res.ok) {
         toast({
           title: "Error",
           description: "Failed to save guardian. Please try again.",
@@ -71,13 +65,6 @@ const Onboarding = () => {
         });
         return;
       }
-
-      // Initialize risk status
-      await supabase.from("risk_status").insert({
-        user_id: userId,
-        risk_level: "low",
-        reason: "Initial setup complete",
-      });
 
       setStep(2);
     } catch (error) {

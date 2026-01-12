@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, MapPin, Phone, CheckCircle, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import LocationMap from "@/components/LocationMap";
+
+const API_BASE = "http://localhost:5000";
 
 interface Guardian {
   id: string;
@@ -16,33 +18,19 @@ const Emergency = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        fetchGuardians(session.user.id);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
-        navigate("/auth");
-      } else {
-        fetchGuardians(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const user = JSON.parse(localStorage.getItem("nk_user") || "null");
+    if (!user) {
+      navigate("/auth");
+    } else {
+      fetchGuardians(user.id);
+    }
   }, [navigate]);
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("guardians")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (data) {
+      const res = await fetch(`${API_BASE}/guardian/${userId}`);
+      const data = await res.json();
+      if (res.ok) {
         setGuardians(data);
       }
     } catch (error) {
@@ -52,15 +40,7 @@ const Emergency = () => {
     }
   };
 
-  const handleReturnHome = async () => {
-    const session = await supabase.auth.getSession();
-    if (session.data.session?.user) {
-      // Reset risk level when leaving emergency
-      await supabase
-        .from("risk_status")
-        .update({ risk_level: "low", reason: "Emergency resolved" })
-        .eq("user_id", session.data.session.user.id);
-    }
+  const handleReturnHome = () => {
     navigate("/home");
   };
 
@@ -120,24 +100,11 @@ const Emergency = () => {
                 Live Location Sharing
               </h2>
             </div>
-            <div className="aspect-[16/9] bg-gradient-to-br from-emergency/5 to-accent relative">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-full bg-emergency/10 flex items-center justify-center mx-auto mb-3 animate-pulse-soft">
-                    <MapPin className="w-8 h-8 text-emergency" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Location is being shared with your guardians
-                  </p>
-                </div>
-              </div>
-              {/* Simulated map grid */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="w-full h-full" style={{
-                  backgroundImage: "linear-gradient(hsl(var(--emergency) / 0.2) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--emergency) / 0.2) 1px, transparent 1px)",
-                  backgroundSize: "40px 40px"
-                }} />
-              </div>
+            <div className="aspect-[16/9]">
+              <LocationMap
+                isTracking={true} 
+                userId={JSON.parse(localStorage.getItem("nk_user") || "{}")?.id}
+              />
             </div>
           </div>
 

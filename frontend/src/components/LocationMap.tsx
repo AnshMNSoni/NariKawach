@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Navigation, AlertCircle } from "lucide-react";
+import { calculateRisk } from "../services/riskService";
 
 // Fix Leaflet default marker icon issue (Vite + React)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -17,6 +18,8 @@ L.Icon.Default.mergeOptions({
 interface LocationMapProps {
   isTracking: boolean;
   onLocationUpdate?: (lat: number, lng: number) => void;
+  userId?: string;
+  showMapAlways?: boolean;
 }
 
 interface LocationState {
@@ -25,10 +28,11 @@ interface LocationState {
   accuracy: number;
 }
 
-const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
+const LocationMap = ({ isTracking, onLocationUpdate, userId }: LocationMapProps) => {
   const [location, setLocation] = useState<LocationState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [risk, setRisk] = useState<any>(null);
 
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -37,15 +41,13 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
   const watchIdRef = useRef<number | null>(null);
 
   /* -------------------------------
-     Initialize Map (ONLY when tracking)
+     Initialize Map (only once)
   -------------------------------- */
   useEffect(() => {
-    if (!isTracking) return;
-    if (!mapContainerRef.current) return;
-    if (mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      center: [20.5937, 78.9629], // India fallback
+      center: [20.5937, 78.9629],
       zoom: 16,
       zoomControl: false,
     });
@@ -56,7 +58,6 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
 
     mapRef.current = map;
 
-    // 🔑 Fix size issue when container appears
     setTimeout(() => {
       map.invalidateSize();
     }, 0);
@@ -68,7 +69,7 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
   }, [isTracking]);
 
   /* -------------------------------
-     Update marker when location changes
+     Update marker & accuracy circle
   -------------------------------- */
   useEffect(() => {
     if (!mapRef.current || !location) return;
@@ -90,9 +91,9 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
         iconAnchor: [11, 11],
       });
 
-      markerRef.current = L.marker([lat, lng], {
-        icon: customIcon,
-      }).addTo(mapRef.current);
+      markerRef.current = L.marker([lat, lng], { icon: customIcon }).addTo(
+        mapRef.current
+      );
     } else {
       markerRef.current.setLatLng([lat, lng]);
     }
@@ -114,7 +115,7 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
   }, [location]);
 
   /* -------------------------------
-     Geolocation Tracking
+     Geolocation Tracking + AI Call
   -------------------------------- */
   useEffect(() => {
     if (!isTracking) {
@@ -131,15 +132,34 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
     }
 
     watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
+      async (pos) => {
         const newLocation = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
         };
+
         setLocation(newLocation);
         setError(null);
         onLocationUpdate?.(newLocation.lat, newLocation.lng);
+
+        try {
+          const payload = {
+            user_id: userId,
+            lat: newLocation.lat,
+            lng: newLocation.lng,
+            crimeDensity: Math.random() * 10,
+            crowdDensity: Math.random() * 10,
+            lightingScore: 10 - Math.random() * 5,
+            hour: new Date().getHours(),
+          };
+
+          const riskResponse = await calculateRisk(payload);
+          setRisk(riskResponse);
+          console.log("AI RISK RESPONSE:", riskResponse);
+        } catch (err) {
+          console.error("Risk service unavailable", err);
+        }
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
@@ -164,21 +184,17 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
   }, [isTracking, onLocationUpdate]);
 
   /* -------------------------------
+     React to HIGH risk
+  -------------------------------- */
+  useEffect(() => {
+    if (risk?.risk_level === "HIGH") {
+      alert("⚠️ High Risk Area Detected. Stay Alert!");
+    }
+  }, [risk]);
+
+  /* -------------------------------
      UI States
   -------------------------------- */
-
-  if (!isTracking) {
-    return (
-      <div className="aspect-video bg-muted/40 rounded-2xl border flex items-center justify-center">
-        <div className="text-center">
-          <MapPin className="w-8 h-8 text-primary mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">
-            Start a trip to enable live tracking
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (permissionDenied) {
     return (
@@ -210,7 +226,20 @@ const LocationMap = ({ isTracking, onLocationUpdate }: LocationMapProps) => {
   }
 
   return (
-    <div className="aspect-video rounded-2xl overflow-hidden border shadow-soft">
+    <div className="aspect-video rounded-2xl overflow-hidden border shadow-soft relative">
+      {risk && (
+        <div
+          className={`absolute top-3 left-3 z-10 px-3 py-1 rounded-full text-xs font-medium ${risk.risk_level === "HIGH"
+            ? "bg-red-600 text-white"
+            : risk.risk_level === "MEDIUM"
+              ? "bg-yellow-500 text-black"
+              : "bg-green-600 text-white"
+            }`}
+        >
+          Risk: {risk.risk_level}
+        </div>
+      )}
+
       <div
         ref={mapContainerRef}
         style={{ height: "100%", width: "100%" }}
