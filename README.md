@@ -1,268 +1,137 @@
-🛡️ NariKawach
-Your Silent Safety Companion
+# NariKawach - Your Silent Safety Companion
 
-NariKawach is a privacy-first, consent-driven women’s safety platform designed to support users during travel through real-time situational awareness, trusted guardian readiness, and calm emergency escalation — without intrusive surveillance or background tracking.
+- NariKawach is a privacy-first, consent-driven women’s safety application designed to support users during travel through real-time risk awareness, guardian readiness, and calm emergency escalation — without intrusive surveillance.
 
-This repository contains the complete frontend, backend, and AI-ready architecture used for the hackathon submission, built with production-grade engineering practices and ethical UX principles.
+### 🌐 Live Demo: [Visit](https://youtu.be/6u50YgdIvRw)
 
-🌍 Problem Statement
+- This repository contains the complete frontend and backend-integrated codebase used for the hackathon submission.
 
-Most existing safety applications rely on:
+# Architecture Diagram:
+<img width="1430" height="736" alt="Architecture_Diagram" src="https://github.com/user-attachments/assets/3c579f4c-5369-422a-aa21-2e336da74338" />
 
-Continuous background tracking
+# Flow Diagram:
+<img width="1760" height="1000" alt="Flow_chart" src="https://github.com/user-attachments/assets/6873c0d7-8a7e-4c9a-a4b0-15cff5cd1c6c" />
 
-Panic-driven interfaces
+# Sequence Diagram:
+<img width="1740" height="1495" alt="Sequence Diagram" src="https://github.com/user-attachments/assets/f11f5757-2a08-422f-9100-05f41cdf7389" />
 
-Invasive data collection
+##  Key Features
 
-These approaches often reduce trust and discourage long-term usage.
+- Secure Authentication
+Email-based login and signup with validation and protected routes.
 
-NariKawach solves this by design.
+- Guardian Management
+Add and manage trusted emergency contacts who can be notified during high-risk situations.
 
-🌟 Core Principles
+- Trip-Based Safety Monitoring
+Safety tracking activates only during user-initiated trips.
 
-Consent First – Monitoring begins only when the user starts a trip
+- Live Location Map
+Real-time map display using browser geolocation and Leaflet, with safe fallbacks for demo reliability.
 
-Calm Over Panic – Informative, reassuring UI instead of fear-based alerts
+- Risk-Level Awareness: Clear safety states — Low, Medium, High — with UI-based escalation.
 
-Privacy by Default – No passive tracking, no silent data sharing
+- Emergency Mode: Dedicated emergency screen showing guardian contacts, live location, and SOS confirmation.
 
-✨ Key Features
-🔐 Secure Authentication
+- Auto Mode: Manual risk simulation to showcase escalation workflows safely during demos.
 
-Email-based login and signup
+- Privacy by Design: Location data is used only during active trips and never shared without user consent.
 
-Backend-managed authentication
+## Technology Stack
+- Category	Technology
+- Frontend	React + TypeScript
+- Build Tool	Vite
+- Styling	Tailwind CSS + shadcn/ui
+- Routing	React Router DOM
+- State Management	TanStack React Query
+- Forms & Validation	React Hook Form + Zod
+- Maps	Leaflet (OpenStreetMap tiles)
+- Backend	Supabase (Auth, Database, Realtime)
+- Notifications (UI)	Sonner
 
-Protected routes with defensive rendering
+## Database Overview
 
-Frontend independent of auth SDKs
+- The application uses three core tables, all protected with Row Level Security (RLS):
 
-👥 Guardian Management
+1️⃣ guardians – trusted emergency contacts
 
-Add and manage trusted emergency contacts
+2️⃣ risk_status – current safety level of the user
 
-Secure backend APIs for guardian operations
-
-Guardians ready for escalation scenarios
-
-🧭 Trip-Based Safety Monitoring
-
-Safety tracking activates only during user-initiated trips
-
-Clear trip lifecycle: start → monitor → end
-
-No background or passive tracking
-
-🗺️ Live Location Map
-
-Real-time location via Browser Geolocation API
-
-Interactive map using Leaflet + OpenStreetMap
-
-Graceful fallbacks to ensure demo reliability
-
-Location visible only during active trips
-
-⚠️ Risk-Level Awareness
-
-Clear safety states: Low · Medium · High
-
-UI-based escalation indicators
-
-Designed to inform without inducing panic
-
-🚨 Emergency Mode
-
-Dedicated emergency screen
-
-Displays guardian contacts and live location
-
-Intentional, confirmation-based escalation flow
-
-🧪 Demo Mode (Developer-Friendly)
-
-Manual risk simulation (Medium / High)
-
-Emergency flow testing without real danger
-
-Ideal for hackathons and live demos
-
-🔒 Privacy by Design
-
-Location data used only during active trips
-
-No background surveillance
-
-No data sharing without explicit consent
-
-🧰 Technology Stack
-Frontend
-
-React + TypeScript
-
-Vite (Build Tool)
-
-Tailwind CSS + shadcn/ui
-
-React Router DOM
-
-TanStack React Query
-
-React Hook Form + Zod
-
-Leaflet (OpenStreetMap tiles)
-
-Backend
-
-Node.js + Express
-
-Supabase (Auth, Database, RLS)
-
-REST-based API architecture
-
-WebSocket-ready for real-time extensions
-
-AI / ML Layer
-
-FastAPI-based microservice
-
-Containerized using Docker
-
-Independently deployable and scalable
-
-Accepts trip context and returns:
-
-Risk score
-
-Risk level
-
-Confidence
-
-Explanation
-
-⚠️ The AI service is optional for core functionality and designed for future expansion.
-
-🗄️ Database Overview
-
-The system uses a minimal, secure schema protected with Row Level Security (RLS):
-
-Table	Purpose
-guardians	Trusted emergency contacts
-trips	Trip lifecycle and outcomes
-risk_status	Current safety state
+3️⃣ trips – trip lifecycle and outcomes
 
 Each user can only read and write their own data.
 
-🧭 Application Routes
-Route	Description
-/	Landing & trust overview
-/auth	Login / Signup
-/onboarding	Guardian setup & consent
-/home	Dashboard & trip controls
-/emergency	Emergency escalation
-/history	Past trip log
-/settings	Guardians & safety toggles
-/preferences	Sensitivity & alert settings
-/help	Transparency & help
-*	404 fallback
-🚀 Running the Project Locally
-Prerequisites
+**Node.js (v18+ recommended)**
 
-Node.js v18+
-
+```sh
 npm
-
-(Optional) Docker — only for ML service
+```
 
 Setup
 # Install dependencies
+```sh
 npm install
+```
 
 # Start development server
+``` sh
 npm run dev
-
+```
 
 The app will be available at:
 
+```sh
 http://localhost:8081
+```
 
+## Environment Variables
 
-Docker is not required for authentication, map, or demo flows.
-
-🔐 Environment Variables
-
-Create a .env file (never commit it):
-
+Create a .env file in the root directory:
+```sh
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-🧪 Demo Mode
+- Never commit real environment variables to GitHub.
 
-To ensure safe and reliable hackathon demonstrations, NariKawach includes a Demo Mode:
+## Auto Mode
 
-Simulate Medium / High risk levels
+- For safe and reliable demonstrations, NariKawach includes a Demo Mode:
 
-Trigger emergency workflows manually
+- Simulate Medium / High risk levels
 
-No real danger or alerts
+- Trigger emergency flow without real danger
 
-Designed for judges and live demos
+## Responsive Design
+- Mobile-first layout
+- Touch-friendly controls
+- Fixed bottom navigation
+- Calm animations and soft color palette for reassurance
 
-📱 Responsive Design
+## Design Philosophy
 
-Mobile-first layout
+- NariKawach is built around three principles:
 
-Touch-friendly controls
+- Consent First – Monitoring starts only when the user chooses
 
-Fixed bottom navigation
+- Calm Over Panic – No aggressive visuals or fear-driven UI
 
-Calm animations and soft color palette
+- Privacy by Default – No background tracking, no surveillance
 
-🧠 Architecture Highlights
+## Planned Enhancements (Post-Hackathon)
 
-Backend-owned authentication
+- These features are intentionally scoped out of the hackathon build to ensure stability and ethical deployment:
 
-API-first data flow
+- SMS / WhatsApp alerts to guardians
 
-Defensive UI rendering (no white screens)
+- AI-driven risk detection
 
-Clear separation of concerns:
+- Hardware-based panic triggers
 
-Frontend → UX & state
+- Route playback and historical maps
 
-Backend → auth, data, orchestration
+- Production-grade notification services
 
-AI service → risk evaluation
+## Final Note
 
-🛣️ Planned Enhancements (Post-Hackathon)
-
-These features were intentionally scoped out to ensure stability and ethical deployment:
-
-SMS / WhatsApp alerts to guardians
-
-AI-driven real-time risk detection
-
-Hardware-based panic triggers
-
-Route playback & historical maps
-
-Production-grade notification services
-
-👥 Authors & Contributors
-
-This project was collaboratively designed, developed, and integrated by:
-
-Vansh Jain
-Frontend Architecture, UX Flow, System Integration & Final Stabilization
-
-Ansh Soni
-Backend Development, API Design & Database Integration
-
-Meet Vyas
-Machine Learning Service Architecture & Risk Logic
-
-Prince Koladiya
-AI/ML Integration Support & System Testing
-
-Developed as a collaborative hackathon submission with clear ownership across frontend, backend, and AI systems.
+This project demonstrates a complete, extensible safety workflow with strong UX, ethical design, and clear separation of concerns between frontend, backend, and AI components.
