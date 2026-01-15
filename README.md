@@ -138,9 +138,9 @@ This project demonstrates a complete, extensible safety workflow with strong UX,
 
 ## Team Members:
 
-1️⃣ [@username](https://github.com/username)
-2️⃣ [@username](https://github.com/username)
-3️⃣ [@username](https://github.com/username)
-4️⃣ [@username](https://github.com/username)
+1️⃣ [@vanshjain271](https://github.com/vanshjain271)
+2️⃣ [@Prince-Koladiya09](https://github.com/Prince-Koladiya09)
+3️⃣ [@MeetRvyas](https://github.com/MeetRvyas)
+4️⃣ [@AnshMNSoni](https://github.com/AnshMNSoni)
 
 ## Thankyou
