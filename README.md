@@ -136,11 +136,11 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 This project demonstrates a complete, extensible safety workflow with strong UX, ethical design, and clear separation of concerns between frontend, backend, and AI components.
 
-## Team
+## Team Members:
 
-1️⃣ 
-2️⃣ 
-3️⃣ 
-4️⃣ 
+1️⃣ [@username](https://github.com/username)
+2️⃣ [@username](https://github.com/username)
+3️⃣ [@username](https://github.com/username)
+4️⃣ [@username](https://github.com/username)
 
 ## Thankyou
