@@ -11,7 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import LocationMap from "@/components/LocationMap";
-import { apiFetch } from "@/lib/api"; // ✅ IMPORTANT
+import { api } from "@/lib/api";
 
 interface Guardian {
   id: string;
@@ -35,7 +35,7 @@ const Emergency = () => {
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const data = await apiFetch(`/guardian/${userId}`);
+      const { data } = await api.get(`/guardian/${userId}`);
       setGuardians(data);
     } catch (error) {
       console.error("Error fetching guardians", error);

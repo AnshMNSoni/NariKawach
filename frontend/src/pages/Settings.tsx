@@ -22,7 +22,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getUser } from "@/utils/auth";
-import { apiFetch } from "@/lib/api"; // ✅ IMPORTANT
+import { api } from "@/lib/api";
 
 type Guardian = {
   id: string;
@@ -60,7 +60,7 @@ const Settings = () => {
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const data = await apiFetch(`/guardian/${userId}`);
+      const { data } = await api.get(`/guardian/${userId}`);
       setGuardians(data);
     } catch (error) {
       console.error("Error fetching guardians", error);
@@ -85,13 +85,10 @@ const Settings = () => {
 
     setSaving(true);
     try {
-      const data = await apiFetch("/guardian/add", {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: user.id,
-          name: name.trim(),
-          phone: phone.trim(),
-        }),
+      const { data } = await api.post("/guardian/add", {
+        user_id: user.id,
+        name: name.trim(),
+        phone: phone.trim(),
       });
 
       setGuardians([...guardians, data]);

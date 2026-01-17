@@ -24,7 +24,7 @@ import Logo from "@/components/Logo";
 import FeatureCard from "@/components/FeatureCard";
 import heroBanner from "@/assets/hero-banner.png";
 
-import { apiFetch } from "@/lib/api"; // ✅ IMPORTANT
+import { api } from "@/lib/api";
 
 type RiskLevel = "low" | "medium" | "high";
 type SafetyStatus = "safe" | "monitoring" | "emergency";
@@ -77,7 +77,7 @@ const Home = () => {
 
   const checkActiveTrip = async (userId: string) => {
     try {
-      const trips = await apiFetch(`/trip/history/${userId}`);
+      const { data: trips } = await api.get(`/trip/history/${userId}`);
       const active = trips.find((t: any) => t.status === "active");
       if (active) {
         setIsTripActive(true);
@@ -100,12 +100,9 @@ const Home = () => {
     }
 
     try {
-      const data = await apiFetch("/trip/start", {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: user.id,
-          start_location: { lat: currentLat, lng: currentLng }
-        })
+      const { data } = await api.post("/trip/start", {
+        user_id: user.id,
+        start_location: { lat: currentLat, lng: currentLng }
       });
 
       setCurrentTripId(data.id);
@@ -123,10 +120,7 @@ const Home = () => {
 
   const endTrip = async () => {
     try {
-      await apiFetch("/trip/end", {
-        method: "POST",
-        body: JSON.stringify({ trip_id: currentTripId })
-      });
+      await api.post("/trip/end", { trip_id: currentTripId });
 
       setIsTripActive(false);
       setCurrentTripId(null);
@@ -143,10 +137,7 @@ const Home = () => {
     setTriggeringPanic(true);
     try {
       if (!isTripActive) {
-        const trip = await apiFetch("/trip/start", {
-          method: "POST",
-          body: JSON.stringify({ user_id: user.id })
-        });
+        const { data: trip } = await api.post("/trip/start", { user_id: user.id });
         setCurrentTripId(trip.id);
         setIsTripActive(true);
       }

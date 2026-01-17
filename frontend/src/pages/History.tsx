@@ -12,7 +12,7 @@ import {
 import BottomNav from "@/components/BottomNav";
 import { format } from "date-fns";
 import { getUser } from "@/utils/auth";
-import { apiFetch } from "@/lib/api"; // ✅ IMPORTANT
+import { api } from "@/lib/api";
 
 type Trip = {
   id: string;
@@ -39,7 +39,7 @@ const History = () => {
 
   const fetchTrips = async (userId: string) => {
     try {
-      const data = await apiFetch(`/trip/history/${userId}`);
+      const { data } = await api.get(`/trip/history/${userId}`);
       setTrips(data as Trip[]);
     } catch (error) {
       console.error("Error fetching trips", error);

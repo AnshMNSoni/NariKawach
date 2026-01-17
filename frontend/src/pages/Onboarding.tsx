@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { apiFetch } from "@/lib/api"; // ✅ IMPORTANT
+import { api } from "@/lib/api";
 
 const guardianSchema = z.object({
   name: z
@@ -64,13 +64,10 @@ const Onboarding = () => {
 
     setLoading(true);
     try {
-      await apiFetch("/guardian/add", {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: userId,
-          name: name.trim(),
-          phone: phone.trim(),
-        }),
+      await api.post("/guardian/add", {
+        user_id: userId,
+        name: name.trim(),
+        phone: phone.trim(),
       });
 
       setStep(2);
