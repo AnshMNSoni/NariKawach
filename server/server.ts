@@ -13,19 +13,18 @@ import { initWebSocket } from "./websocket.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: ["https://nari-kawach.vercel.app"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({
     status: "Nari Kawach Backend Running",
-    message: "Server is healthy",
-    apis: {
-      location: "POST /location/update",
-      risk: "POST /risk/calculate",
-      guardian: "POST /guardian/add | GET /guardian/:user_id",
-      alert: "POST /alert/send"
-    }
+    message: "Server is healthy"
   });
 });
 
@@ -38,7 +37,7 @@ app.use("/trip", tripRoutes);
 const server = http.createServer(app);
 initWebSocket(server);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`Nari Kawach backend running on port ${PORT}`);
 });
