@@ -1,16 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, User, Phone, Plus, LogOut, Lock, MapPin, Bell, ChevronRight, Zap } from "lucide-react";
+import {
+  Shield,
+  User,
+  Plus,
+  LogOut,
+  Lock,
+  MapPin,
+  Bell,
+  ChevronRight,
+  Zap
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import BottomNav from "@/components/BottomNav";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
 import { getUser } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 type Guardian = {
   id: string;
@@ -32,8 +44,8 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [safetyMonitoring, setSafetyMonitoring] = useState(true);
   const [emergencyEscalation, setEmergencyEscalation] = useState(true);
-
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,13 +60,10 @@ const Settings = () => {
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/guardian/${userId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setGuardians(data);
-      }
+      const { data } = await api.get(`/guardian/${userId}`);
+      setGuardians(data);
     } catch (error) {
-      console.error("Error fetching guardians");
+      console.error("Error fetching guardians", error);
     } finally {
       setLoading(false);
     }
@@ -76,31 +85,31 @@ const Settings = () => {
 
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/guardian/add`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: user.id,
-          name: name.trim(),
-          phone: phone.trim(),
-        }),
+      const { data } = await api.post("/guardian/add", {
+        user_id: user.id,
+        name: name.trim(),
+        phone: phone.trim(),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setGuardians([...guardians, data]);
-        setName("");
-        setPhone("");
-        setShowAddForm(false);
-        toast({ title: "Guardian Added", description: `${data.name} has been added as a guardian.` });
-      }
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to add guardian.", variant: "destructive" });
+
+      setGuardians([...guardians, data]);
+      setName("");
+      setPhone("");
+      setShowAddForm(false);
+
+      toast({
+        title: "Guardian Added",
+        description: `${data.name} has been added as a guardian.`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to add guardian.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
   };
-
-
 
   const handleLogout = () => {
     localStorage.removeItem("nk_user");
@@ -123,67 +132,49 @@ const Settings = () => {
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Shield className="w-5 h-5 text-primary" />
           </div>
-          <span className="text-xl font-semibold text-foreground">Settings</span>
+          <span className="text-xl font-semibold">Settings</span>
         </div>
       </nav>
 
       {/* Content */}
       <div className="flex-1 container mx-auto px-4 py-4">
         <div className="max-w-lg mx-auto space-y-6">
-          {/* Guardians Section */}
-          <section className="bg-card rounded-2xl shadow-soft border border-border/50 p-5 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+
+          {/* Guardians */}
+          <section className="bg-card rounded-2xl p-5 border shadow-soft">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
               Guardians
             </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Trusted contacts who will be notified in emergencies.
-            </p>
 
             <div className="space-y-3">
-              {guardians.map((guardian) => (
+              {guardians.map((g) => (
                 <div
-                  key={guardian.id}
-                  className="flex items-center justify-between p-3 bg-muted/30 rounded-xl"
+                  key={g.id}
+                  className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{guardian.name}</p>
-                      <p className="text-sm text-muted-foreground">{guardian.phone}</p>
-                    </div>
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary" />
                   </div>
-
+                  <div>
+                    <p className="font-medium">{g.name}</p>
+                    <p className="text-sm text-muted-foreground">{g.phone}</p>
+                  </div>
                 </div>
               ))}
 
               {showAddForm ? (
                 <div className="space-y-3 p-4 bg-muted/30 rounded-xl">
-                  <div className="space-y-2">
-                    <Label htmlFor="guardian-name" className="text-sm">Name</Label>
-                    <Input
-                      id="guardian-name"
-                      placeholder="Guardian name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="h-11"
-                    />
+                  <div>
+                    <Label>Name</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="guardian-phone" className="text-sm">Phone</Label>
-                    <Input
-                      id="guardian-phone"
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="h-11"
-                    />
+                  <div>
+                    <Label>Phone</Label>
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={handleAddGuardian} disabled={saving} className="flex-1">
+                    <Button onClick={handleAddGuardian} disabled={saving}>
                       {saving ? "Adding..." : "Add Guardian"}
                     </Button>
                     <Button variant="outline" onClick={() => setShowAddForm(false)}>
@@ -192,11 +183,7 @@ const Settings = () => {
                   </div>
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowAddForm(true)}
-                >
+                <Button variant="outline" onClick={() => setShowAddForm(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Guardian
                 </Button>
@@ -204,100 +191,42 @@ const Settings = () => {
             </div>
           </section>
 
-          {/* Safety Controls Section */}
-          <section className="bg-card rounded-2xl shadow-soft border border-border/50 p-5 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          {/* Safety Controls */}
+          <section className="bg-card rounded-2xl p-5 border shadow-soft">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Bell className="w-5 h-5 text-primary" />
               Safety Controls
             </h2>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
-                <div>
-                  <p className="font-medium text-foreground">Safety Monitoring</p>
-                  <p className="text-sm text-muted-foreground">Track location during active trips</p>
-                </div>
+              <div className="flex justify-between items-center p-3 bg-muted/30 rounded-xl">
+                <p>Safety Monitoring</p>
                 <Switch checked={safetyMonitoring} onCheckedChange={setSafetyMonitoring} />
               </div>
-
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
-                <div>
-                  <p className="font-medium text-foreground">Emergency Escalation</p>
-                  <p className="text-sm text-muted-foreground">Auto-notify guardians on high risk</p>
-                </div>
+              <div className="flex justify-between items-center p-3 bg-muted/30 rounded-xl">
+                <p>Emergency Escalation</p>
                 <Switch checked={emergencyEscalation} onCheckedChange={setEmergencyEscalation} />
               </div>
             </div>
           </section>
 
-          {/* Privacy Section */}
-          <section className="bg-card rounded-2xl shadow-soft border border-border/50 p-5 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" />
-              Privacy
-            </h2>
-
-            <div className="flex gap-3 p-4 bg-muted/30 rounded-xl">
-              <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-foreground mb-1">Location Data</p>
-                <p className="text-sm text-muted-foreground">
-                  Location data is only used during active trips and is never shared without your consent.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Preferences Link */}
+          {/* Demo */}
           <button
-            onClick={() => navigate("/preferences")}
-            className="w-full bg-card rounded-2xl shadow-soft border border-border/50 p-5 flex items-center justify-between hover:bg-muted/30 transition-colors animate-fade-in"
+            onClick={() => navigate("/home?demo=true")}
+            className="w-full bg-card p-5 rounded-2xl border flex justify-between items-center"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-foreground">Safety Preferences</p>
-                <p className="text-sm text-muted-foreground">Customize sensitivity & alerts</p>
-              </div>
+              <Zap className="w-5 h-5 text-primary" />
+              <span>Demo Mode</span>
+              <Badge variant="outline">Testing</Badge>
             </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <ChevronRight />
           </button>
 
-          {/* Developer Options Section */}
-          <section className="bg-card rounded-2xl shadow-soft border border-border/50 p-5 animate-fade-in">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-primary" />
-              Developer Options
-            </h2>
-
-            <button
-              onClick={() => navigate("/home?demo=true")}
-              className="w-full flex items-center justify-between p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-foreground">Demo Mode</p>
-                    <Badge variant="outline" className="text-xs">Testing</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Simulate risk escalation workflow
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </section>
-
-          {/* Logout Button */}
+          {/* Logout */}
           <Button
             variant="outline"
-            className="w-full h-12 text-destructive border-destructive/30 hover:bg-destructive/10"
+            className="w-full text-destructive border-destructive/30"
             onClick={() => setLogoutDialogOpen(true)}
           >
             <LogOut className="w-5 h-5 mr-2" />
@@ -308,13 +237,11 @@ const Settings = () => {
 
       <BottomNav />
 
-
-
       <ConfirmDialog
         open={logoutDialogOpen}
         onOpenChange={setLogoutDialogOpen}
         title="Logout"
-        description="Are you sure you want to logout? You'll need to sign in again to access your safety features."
+        description="Are you sure you want to logout?"
         confirmText="Logout"
         onConfirm={handleLogout}
         variant="destructive"

@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, MapPin, Phone, CheckCircle, User, ArrowLeft } from "lucide-react";
+import {
+  Shield,
+  MapPin,
+  Phone,
+  CheckCircle,
+  User,
+  ArrowLeft
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import LocationMap from "@/components/LocationMap";
-
-const API_BASE = "http://localhost:5000";
+import { api } from "@/lib/api";
 
 interface Guardian {
   id: string;
@@ -28,13 +35,10 @@ const Emergency = () => {
 
   const fetchGuardians = async (userId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/guardian/${userId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setGuardians(data);
-      }
+      const { data } = await api.get(`/guardian/${userId}`);
+      setGuardians(data);
     } catch (error) {
-      console.error("Error fetching guardians");
+      console.error("Error fetching guardians", error);
     } finally {
       setLoading(false);
     }
@@ -52,6 +56,8 @@ const Emergency = () => {
     );
   }
 
+  const userId = JSON.parse(localStorage.getItem("nk_user") || "{}")?.id;
+
   return (
     <div className="min-h-screen gradient-emergency flex flex-col">
       {/* Header */}
@@ -60,21 +66,24 @@ const Emergency = () => {
           <div className="w-10 h-10 rounded-xl bg-emergency/10 flex items-center justify-center">
             <Shield className="w-5 h-5 text-emergency" />
           </div>
-          <span className="text-xl font-semibold text-foreground">NariKawach</span>
+          <span className="text-xl font-semibold text-foreground">
+            NariKawach
+          </span>
         </div>
       </nav>
 
       {/* Main Content */}
       <div className="flex-1 container mx-auto px-4 py-6">
         <div className="max-w-lg mx-auto space-y-6">
+
           {/* Emergency Banner */}
-          <div className="bg-card rounded-2xl p-6 shadow-soft border border-emergency/20 animate-fade-in">
+          <div className="bg-card rounded-2xl p-6 shadow-soft border border-emergency/20">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-emergency/10 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-emergency animate-pulse-soft" />
+                <Shield className="w-6 h-6 text-emergency animate-pulse" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-foreground">
+                <h1 className="text-xl font-semibold">
                   Emergency Mode Active
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -83,43 +92,44 @@ const Emergency = () => {
               </div>
             </div>
 
-            {/* SOS Status */}
             <div className="flex items-center gap-2 px-4 py-3 bg-emergency/5 rounded-xl border border-emergency/10">
               <CheckCircle className="w-5 h-5 text-emergency" />
-              <span className="text-sm font-medium text-foreground">
-                SOS Sent — Your contacts have been notified
+              <span className="text-sm font-medium">
+                SOS Sent — Guardians notified
               </span>
             </div>
           </div>
 
-          {/* Location Card */}
-          <div className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border/50">
-            <div className="p-4 border-b border-border">
-              <h2 className="font-medium text-foreground flex items-center gap-2">
+          {/* Location */}
+          <div className="bg-card rounded-2xl overflow-hidden shadow-soft border">
+            <div className="p-4 border-b">
+              <h2 className="font-medium flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emergency" />
-                Live Location Sharing
+                Live Location
               </h2>
             </div>
             <div className="aspect-[16/9]">
               <LocationMap
-                isTracking={true} 
-                userId={JSON.parse(localStorage.getItem("nk_user") || "{}")?.id}
+                isTracking
+                userId={userId}
+                showMapAlways
               />
             </div>
           </div>
 
-          {/* Guardian Contacts */}
-          <div className="bg-card rounded-2xl shadow-soft border border-border/50">
-            <div className="p-4 border-b border-border">
-              <h2 className="font-medium text-foreground">
-                Emergency Contacts Notified
+          {/* Guardians */}
+          <div className="bg-card rounded-2xl shadow-soft border">
+            <div className="p-4 border-b">
+              <h2 className="font-medium">
+                Emergency Contacts
               </h2>
             </div>
+
             <div className="p-4 space-y-3">
               {guardians.length > 0 ? (
-                guardians.map((guardian) => (
+                guardians.map((g) => (
                   <div
-                    key={guardian.id}
+                    key={g.id}
                     className="flex items-center justify-between p-3 bg-accent/30 rounded-xl"
                   >
                     <div className="flex items-center gap-3">
@@ -127,13 +137,16 @@ const Emergency = () => {
                         <User className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{guardian.name}</p>
-                        <p className="text-sm text-muted-foreground">{guardian.phone}</p>
+                        <p className="font-medium">{g.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {g.phone}
+                        </p>
                       </div>
                     </div>
+
                     <a
-                      href={`tel:${guardian.phone}`}
-                      className="w-10 h-10 rounded-full bg-safe flex items-center justify-center hover:bg-safe/90 transition-colors"
+                      href={`tel:${g.phone}`}
+                      className="w-10 h-10 rounded-full bg-safe flex items-center justify-center"
                     >
                       <Phone className="w-5 h-5 text-safe-foreground" />
                     </a>
@@ -147,11 +160,11 @@ const Emergency = () => {
             </div>
           </div>
 
-          {/* Return Button */}
+          {/* Back */}
           <Button
             onClick={handleReturnHome}
             variant="outline"
-            className="w-full h-12 text-base"
+            className="w-full h-12"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Return to Dashboard
