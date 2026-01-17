@@ -1,9 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Clock, CheckCircle, AlertTriangle, Eye, Calendar, ChevronRight } from "lucide-react";
+import {
+  Shield,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Eye,
+  Calendar
+} from "lucide-react";
+
 import BottomNav from "@/components/BottomNav";
 import { format } from "date-fns";
 import { getUser } from "@/utils/auth";
+import { apiFetch } from "@/lib/api"; // ✅ IMPORTANT
 
 type Trip = {
   id: string;
@@ -30,13 +39,10 @@ const History = () => {
 
   const fetchTrips = async (userId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/trip/history/${userId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setTrips(data as Trip[]);
-      }
+      const data = await apiFetch(`/trip/history/${userId}`);
+      setTrips(data as Trip[]);
     } catch (error) {
-      console.error("Error fetching trips");
+      console.error("Error fetching trips", error);
     } finally {
       setLoading(false);
     }
@@ -92,7 +98,7 @@ const History = () => {
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Shield className="w-5 h-5 text-primary" />
           </div>
-          <span className="text-xl font-semibold text-foreground">Trip History</span>
+          <span className="text-xl font-semibold">Trip History</span>
         </div>
       </nav>
 
@@ -100,27 +106,26 @@ const History = () => {
       <div className="flex-1 container mx-auto px-4 py-6">
         <div className="max-w-lg mx-auto space-y-4">
           {trips.length === 0 ? (
-            <div className="bg-card rounded-2xl shadow-soft border border-border/50 p-8 text-center animate-fade-in">
+            <div className="bg-card rounded-2xl shadow-soft border p-8 text-center">
               <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-7 h-7 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Trips Yet</h3>
+              <h3 className="text-lg font-semibold mb-2">No Trips Yet</h3>
               <p className="text-sm text-muted-foreground">
-                Your trip history will appear here once you start your first trip.
+                Your trip history will appear here once you start a trip.
               </p>
             </div>
           ) : (
             trips.map((trip, index) => (
               <div
                 key={trip.id}
-                className="bg-card rounded-2xl shadow-soft border border-border/50 p-5 animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
+                className="bg-card rounded-2xl shadow-soft border p-5"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex justify-between mb-3">
                   <div className="flex items-center gap-3">
                     {getStatusIcon(trip.status, trip.end_risk_level)}
                     <div>
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium">
                         {format(new Date(trip.started_at), "MMM d, yyyy")}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -128,8 +133,9 @@ const History = () => {
                       </p>
                     </div>
                   </div>
+
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                    className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(
                       trip.status,
                       trip.end_risk_level
                     )}`}
@@ -138,21 +144,21 @@ const History = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
-                    <span>{formatDuration(trip.started_at, trip.ended_at)}</span>
+                    {formatDuration(trip.started_at, trip.ended_at)}
                   </div>
                   {trip.ended_at && (
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>Ended {format(new Date(trip.ended_at), "h:mm a")}</span>
+                      Ended {format(new Date(trip.ended_at), "h:mm a")}
                     </div>
                   )}
                 </div>
 
                 {trip.notes && (
-                  <p className="mt-3 text-sm text-muted-foreground border-t border-border/30 pt-3">
+                  <p className="mt-3 text-sm text-muted-foreground border-t pt-3">
                     {trip.notes}
                   </p>
                 )}
